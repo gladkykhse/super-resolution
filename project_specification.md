@@ -12,7 +12,7 @@ Explore the latest and the most powerful generative conditional Image Super-Reso
 	* tf.keras.Model 
 	* Convolution blocks (UNet architecture)
 	* Attention mechanism
-  * Timestamp embeddings
+  	* Timestamp embeddings
 3. Evaluation and visualisation modules
 	* Metrics
 	* Upscaled result visualisation
