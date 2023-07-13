@@ -5,11 +5,17 @@ Explore the latest and the most powerful generative conditional Image Super-Reso
 
 ----
 
-**The project will consist of:**
-1. Data preprocessing module
-2. Dataset creation module
-3. SR3 Model
-4. Evaluation and visualisation modules
+**Project structure:**
+1. Data preprocessing and dataset creation module
+	* TBD
+2. Super-Resolution model
+	* tf.keras.Model 
+	* Convolution blocks (UNet architecture)
+	* Attention mechanism
+  * Timestamp embeddings
+3. Evaluation and visualisation modules
+	* Metrics
+	* Upscaled result visualisation
 
 ----
 
