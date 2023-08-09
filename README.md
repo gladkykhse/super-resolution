@@ -7,7 +7,7 @@ Explore the latest and the most powerful generative conditional Image Super-Reso
 
 ### Project structure:
 
-In the project I will follow the paper: https://arxiv.org/abs/2104.07636
+In the project I will loosely follow the paper: https://arxiv.org/abs/2104.07636
 
 The modules below need to be implemented
 
