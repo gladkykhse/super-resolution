@@ -1,14 +1,30 @@
-import tensorflow as tf
+import argparse
 import numpy as np
+import tensorflow as tf
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--seed", default=42, type=int, help="Random seed")
+
+parser.add_argument("--height", default=64, type=int, help="Up-scaled image height")
+parser.add_argument("--width", default=64, type=int, help="Up-scaled image width")
+parser.add_argument("--channels", default=3, type=int, help="Up-scaled image channels")
+parser.add_argument("--cnn_channels", default=32, type=int, help="CNN channels in the first stage.")
+parser.add_argument("--downscale", default=4, type=int, help="Downscale factor")
+
+parser.add_argument("--stages", default=4, type=int, help="UNet scaling stages")
+parser.add_argument("--stage_blocks", default=2, type=int, help="ResNet blocks per stage")
+
+parser.add_argument("--ema", default=0.999, type=float, help="Exponential moving average momentum.")
+
 
 class SinusoidalEmbedding(tf.keras.layers.Layer):
     """Sinusoidal embeddings for current noise rate embeddings"""
-    def __init__(self, dim, *args, **kwargs):
+    def __init__(self, dim: int, *args, **kwargs):
         assert dim % 2 == 0
         super().__init__(*args, **kwargs)
         self.dim = dim
 
-    def call(self, inputs):
+    def call(self, inputs, **kwargs):
         cos_embeddings = []
         sin_embeddings = []
         for i in range(0, self.dim // 2, 1):
@@ -22,3 +38,120 @@ class SinusoidalEmbedding(tf.keras.layers.Layer):
 
         return tf.concat([sin_embeddings, cos_embeddings], axis=-1)
 
+
+def pre_activated_resnet_block(inputs, width, embeddings):
+    """Residual block with noise embeddings"""
+    residual = inputs if inputs.shape[-1] == width else tf.keras.layers.Conv2D(width, 1)(inputs)
+
+    hidden = tf.keras.layers.BatchNormalization()(inputs)
+    hidden = tf.keras.activations.swish(hidden)
+    hidden = tf.keras.layers.Conv2D(width, 3, padding="same", use_bias=False)(hidden)
+
+    noise_layer = tf.keras.layers.Dense(width, activation=tf.keras.activations.swish)(embeddings)
+    hidden += noise_layer
+
+    hidden = tf.keras.layers.BatchNormalization()(hidden)
+    hidden = tf.keras.activations.swish(hidden)
+    hidden = tf.keras.layers.Conv2D(width, 3, padding="same", use_bias=False,
+                                    kernel_initializer=tf.keras.initializers.Constant(value=0))(hidden)
+
+    hidden += residual
+    return hidden
+
+
+class DDPM(tf.keras.Model):
+    """Denoising Diffusion Probabilistic Model"""
+    def __init__(self, args, data):
+        super().__init__()
+
+        inputs = tf.keras.layers.Input([args.height, args.width, args.channels])
+        low_resolution_image = tf.keras.layers.Input([args.height // args.downscale,
+                                                      args.width // args.downscale,
+                                                      args.channels])
+        noise_rates = tf.keras.layers.Input([1, 1, 1])
+
+        noise_embedding = SinusoidalEmbedding(args.cnn_channels)(noise_rates)
+
+        hidden = tf.keras.layers.UpSampling2D(args.downscale, interpolation="bicubic")(low_resolution_image)
+
+        hidden = tf.concat([inputs, hidden], axis=-1)
+        hidden = tf.keras.layers.Conv2D(args.cnn_channels, 3, padding="same")(hidden)
+
+        # Downscale
+        outputs = []
+        for i in range(args.stages):
+            for _ in range(args.stage_blocks):
+                hidden = pre_activated_resnet_block(hidden, args.cnn_channels << i, noise_embedding)
+                outputs.append(hidden)
+            hidden = tf.keras.layers.Conv2D(args.cnn_channels << (i + 1), 3, strides=2, padding="same")(hidden)
+
+        # Middle
+        for _ in range(args.stage_blocks):
+            hidden = pre_activated_resnet_block(hidden, args.cnn_channels << args.stages, noise_embedding)
+
+        # Upscale
+        for i in reversed(range(args.stages)):
+            hidden = tf.keras.layers.Conv2DTranspose(args.cnn_channels << i, (4, 4), strides=2, padding="same")(hidden)
+            for _ in range(args.stage_blocks):
+                hidden = tf.concat([hidden, outputs.pop()], axis=-1)
+                hidden = pre_activated_resnet_block(hidden, args.cnn_channels << i, noise_embedding)
+
+        assert len(outputs) == 0
+
+        hidden = tf.keras.layers.BatchNormalization()(hidden)
+        hidden = tf.keras.activations.swish(hidden)
+        hidden = tf.keras.layers.Conv2D(args.channels, 3, padding="same",
+                                        kernel_initializer=tf.keras.initializers.Constant(value=0))(hidden)
+
+        self._network = tf.keras.Model(inputs=[inputs, low_resolution_image, noise_rates], outputs=hidden)
+        self._ema_network = tf.keras.models.clone_model(self._network)
+
+        self._downscale = args.downscale
+        self._ema_momentum = args.ema
+        self._seed = args.seed
+
+        self._image_normalization = tf.keras.layers.Normalization()
+        # self._image_normalization.adapt(data)
+
+    def _image_denormalization(self, images):
+        images = self._image_normalization.mean + images * self._image_normalization.variance ** 0.5
+        images = tf.clip_by_value(images, 0, 255)
+        images = tf.cast(images, tf.uint8)
+        return images
+
+    def _diffusion_rates(self, times):
+        starting_angle, final_angle = 0.2, 1.55
+        angle = starting_angle + times * (final_angle - starting_angle)
+
+        signal_rates = tf.reshape(tf.cos(angle), [-1, 1, 1, 1])
+        noise_rates = tf.reshape(tf.sin(angle), [-1, 1, 1, 1])
+
+        return signal_rates, noise_rates
+
+    def train_step(self, images):
+        images = self._image_normalization(images)
+        conditioning = tf.keras.layers.AveragePooling2D(self._downscale)(images)
+
+        noises = tf.random.normal(tf.shape(images), seed=self._seed)
+        times = tf.random.uniform(tf.shape(images)[:1], seed=self._seed)
+
+        signal_rates, noise_rates = self._diffusion_rates(times)
+        noisy_images = signal_rates * images + noise_rates * noises
+
+        with tf.GradientTape() as tape:
+            predicted_noises = self._network([noisy_images, conditioning, noise_rates], training=True)
+            loss = self.compiled_loss(predicted_noises, noises)
+
+        self.optimizer.minimize(loss, self._network.trainable_variables, tape=tape)
+
+        for ema_variable, variable in zip(self._ema_network.variables, self._network.variables):
+            ema_variable.assign(self._ema_momentum * ema_variable + (1 - self._ema_momentum) * variable)
+
+        return {metric.name: metric.result() for metric in self.metrics}
+
+    def generate(self):
+        # TODO: finish method
+        pass
+
+args = parser.parse_args()
+ddpm = DDPM(args, None)
