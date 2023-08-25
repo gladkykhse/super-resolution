@@ -59,7 +59,7 @@ def pre_activated_resnet_block(inputs, width, embeddings):
     return hidden
 
 
-class DDPM(tf.keras.Model):
+class DDIM(tf.keras.Model):
     """Denoising Diffusion Probabilistic Model"""
     def __init__(self, args, data):
         super().__init__()
@@ -111,7 +111,7 @@ class DDPM(tf.keras.Model):
         self._seed = args.seed
 
         self._image_normalization = tf.keras.layers.Normalization()
-        # self._image_normalization.adapt(data)
+        self._image_normalization.adapt(data)
 
     def _image_denormalization(self, images):
         images = self._image_normalization.mean + images * self._image_normalization.variance ** 0.5
@@ -149,9 +149,20 @@ class DDPM(tf.keras.Model):
 
         return {metric.name: metric.result() for metric in self.metrics}
 
-    def generate(self):
-        # TODO: finish method
-        pass
+    def generate(self, initial_noise, conditioning, steps):
+        """Sample a batch of images given the `initial_noise` using `steps` steps."""
+        images = initial_noise
+        conditioning = self._image_normalization(conditioning)
+        steps = tf.linspace(tf.ones(tf.shape(initial_noise)[0]), tf.zeros(tf.shape(initial_noise)[0]), steps + 1)
 
-args = parser.parse_args()
-ddpm = DDPM(args, None)
+        for times, next_times in zip(steps[:-1], steps[1:]):
+            signal_rates, noise_rates = self._diffusion_rates(times)
+            predicted_noises = self._ema_network([images, conditioning, noise_rates], training=False)
+
+            next_signal_rates, next_noise_rates = self._diffusion_rates(next_times)
+            denoised_images = (images - noise_rates * predicted_noises) / signal_rates
+
+            images = next_signal_rates * denoised_images + next_noise_rates * predicted_noises
+
+        images = self._image_denormalization(denoised_images)
+        return images
