@@ -7,7 +7,7 @@ Explore the latest and the most powerful generative conditional Image Super-Reso
 
 ### Project structure:
 
-In the project I will loosely follow the paper: https://arxiv.org/abs/2010.02502
+In the project I will follow the paper: https://arxiv.org/abs/2010.02502
 
 The modules below need to be implemented
 
@@ -22,6 +22,7 @@ The modules below need to be implemented
 
 **Input:**
 - path to a folder with either fisheye or panorama images
+- path to a folder with resulting upscaled images
 - type of the input (fisheye/panorama)
 - type of the output (fisheye/panorama)
 
