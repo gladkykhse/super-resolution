@@ -50,10 +50,10 @@ class DDIM(tf.keras.Model):
     def __init__(self, args: argparse.Namespace, data):
         super().__init__()
 
-        inputs = tf.keras.layers.Input([data.H, data.W, data.C])
-        low_resolution_image = tf.keras.layers.Input([data.H // args.downscale,
-                                                      data.W // args.downscale,
-                                                      data.C])
+        inputs = tf.keras.layers.Input([args.height, args.width, args.channels])
+        low_resolution_image = tf.keras.layers.Input([args.height // args.downscale,
+                                                      args.width // args.downscale,
+                                                      args.channels])
         noise_rates = tf.keras.layers.Input([1, 1, 1])
 
         noise_embedding = SinusoidalEmbedding(args.cnn_channels)(noise_rates)
