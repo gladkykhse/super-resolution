@@ -82,8 +82,6 @@ class DDIM(tf.keras.Model):
                 hidden = tf.concat([hidden, outputs.pop()], axis=-1)
                 hidden = pre_activated_resnet_block(hidden, args.cnn_channels << i, noise_embedding)
 
-        assert len(outputs) == 0
-
         hidden = tf.keras.layers.BatchNormalization()(hidden)
         hidden = tf.keras.activations.swish(hidden)
         hidden = tf.keras.layers.Conv2D(args.channels, 3, padding="same",

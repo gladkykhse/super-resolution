@@ -28,7 +28,7 @@ class DatasetCreator:
         return image
 
     def _resize(self, image):
-        return tf.image.resize(image, [128, 128])
+        return tf.image.resize(image, [self.H, self.W])
 
     @property
     def dataset(self):
