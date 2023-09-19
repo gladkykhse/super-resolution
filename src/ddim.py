@@ -47,13 +47,13 @@ def pre_activated_resnet_block(inputs, width, embeddings):
 
 class DDIM(tf.keras.Model):
     """Denoising Diffusion Probabilistic Model"""
-    def __init__(self, args, data):
+    def __init__(self, args: argparse.Namespace, data):
         super().__init__()
 
-        inputs = tf.keras.layers.Input([args.height, args.width, args.channels])
-        low_resolution_image = tf.keras.layers.Input([args.height // args.downscale,
-                                                      args.width // args.downscale,
-                                                      args.channels])
+        inputs = tf.keras.layers.Input([data.H, data.W, data.C])
+        low_resolution_image = tf.keras.layers.Input([data.H // args.downscale,
+                                                      data.W // args.downscale,
+                                                      data.C])
         noise_rates = tf.keras.layers.Input([1, 1, 1])
 
         noise_embedding = SinusoidalEmbedding(args.cnn_channels)(noise_rates)
@@ -100,12 +100,14 @@ class DDIM(tf.keras.Model):
         self._image_normalization.adapt(data)
 
     def _image_denormalization(self, images):
+        """Denornmalize the images"""
         images = self._image_normalization.mean + images * self._image_normalization.variance ** 0.5
         images = tf.clip_by_value(images, 0, 255)
         images = tf.cast(images, tf.uint8)
         return images
 
     def _diffusion_rates(self, times):
+        """Calculate the diffusion rates"""
         starting_angle, final_angle = 0.2, 1.55
         angle = starting_angle + times * (final_angle - starting_angle)
 
@@ -115,6 +117,7 @@ class DDIM(tf.keras.Model):
         return signal_rates, noise_rates
 
     def train_step(self, images):
+        """Train step of the whole model with ema network"""
         images = self._image_normalization(images)
         conditioning = tf.keras.layers.AveragePooling2D(self._downscale)(images)
 
@@ -136,7 +139,7 @@ class DDIM(tf.keras.Model):
         return {metric.name: metric.result() for metric in self.metrics}
 
     def generate(self, initial_noise, conditioning, steps):
-        """Sample a batch of images given the `initial_noise` using `steps` steps."""
+        """Sample a batch of images"""
         images = initial_noise
         conditioning = self._image_normalization(conditioning)
         steps = tf.linspace(tf.ones(tf.shape(initial_noise)[0]), tf.zeros(tf.shape(initial_noise)[0]), steps + 1)
