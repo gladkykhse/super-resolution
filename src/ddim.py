@@ -136,7 +136,6 @@ class DDIM(tf.keras.Model):
         for ema_variable, variable in zip(self._ema_network.variables, self._network.variables):
             ema_variable.assign(self._ema_momentum * ema_variable + (1 - self._ema_momentum) * variable)
 
-        return {metric.name: metric.result() for metric in self.metrics}
 
     def generate(self, initial_noise, conditioning, steps):
         """Sample a batch of images"""

@@ -21,7 +21,7 @@ parser.add_argument("--batch_size", default=64, type=int, help="Size of batch of
 parser.add_argument("--epoch_batches", default=1000, type=int, help="Number of images per one epoch")
 parser.add_argument("--epochs", default=100, type=int, help="Number of epochs")
 parser.add_argument("--test_size", default=100, type=int, help="Number of the images in the test set")
-parser.add_argument("--log_folder", default="training_4x_to_512", type=int, help="Folder to save weights")
+parser.add_argument("--log_folder", default="training_4x_to_512", type=str, help="Folder to save weights")
 
 args = parser.parse_args([] if "__file__" not in globals() else None)
 
@@ -60,4 +60,5 @@ ddim.fit(
     train,
     epochs=args.epochs,
     steps_per_epoch=args.epoch_batches,
-    callbacks=[cp_callback])
+    callbacks=[cp_callback]
+)
