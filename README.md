@@ -21,13 +21,14 @@ The modules below need to be implemented
 ### Project from the user's side
 
 **Input:**
-- path to a folder with either fisheye or panorama images
+- path to a folder with input images
 - path to a folder with resulting upscaled images
-- type of the input (fisheye/panorama)
-- type of the output (fisheye/panorama)
+- upscale factor
+- path to weights of the model
+- staring resolution
 
 **Output:**
-- a folder with the upscaled input images of the type provided by user
+- a folder with the upscaled input images
 
 ----
 
@@ -38,5 +39,5 @@ Programming Language: Python 3.10
 Development Environment: PyCharm Professional 2023.1.3
 
 Libraries:
-- TensorFlow 2.11.0
-- NumPy 1.25.0
+- TensorFlow 2.13.0
+- NumPy 1.24.3
