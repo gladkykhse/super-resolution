@@ -1,7 +1,7 @@
 ## Image Super-Resolution Project Specification
 ### Idea:
 
-Explore the latest and the most powerful generative conditional Image Super-Resolution techniques based on the Demonising Diffusion Probabilistic Models (DDPM). Implement from scratch the Image Super-Resolution using Denoising Diffusion Implicit Models. Research the best parameters and approaches to deliver the best possible result for the given data (low resolution sky images). Evaluate models using different metrics for the image quality after super-resolution such as: Peak Signal to Noise Ratio (PSNR) and Structural Similarity Index Measure (SSIM).
+Explore the latest and the most powerful generative conditional Image Super-Resolution techniques based on the Demonising Diffusion Implicit Model (DDIM). Implement from scratch the Image Super-Resolution using Denoising Diffusion Implicit Models. Research the best parameters and approaches to deliver the best possible result for the given data (low resolution sky images). Evaluate models using different metrics for the image quality after super-resolution such as: Peak Signal to Noise Ratio (PSNR) and Structural Similarity Index Measure (SSIM).
 
 ----
 
