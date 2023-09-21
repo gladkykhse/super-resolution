@@ -27,8 +27,8 @@ parser.add_argument("--dataset_folder", default="/projects/SkyGAN/clouds_fisheye
                     help="Folder with training data")
 
 # Arguments for upscaling
-parser.add_argument("--src_folder", default="", type=str, help="Folder with images to upscale")
-parser.add_argument("--dst_folder", default="", type=str, help="Folder to save results")
+parser.add_argument("--src_folder", default="low_res_64", type=str, help="Folder with images to upscale")
+parser.add_argument("--dst_folder", default="sr_images_128", type=str, help="Folder to save results")
 parser.add_argument("--upscale", default=2, type=int, choices=[4, 8], help="Upscale factor")
 parser.add_argument("--weights_path", default="/home/s_gladkykh/super-resolution/training_2x_to_128/cp.ckpt", type=str,
                     help="Upscale factor")
@@ -38,6 +38,7 @@ parser.add_argument("--resolution", default=(64, 64), type=tuple, choices=[(64, 
 args = parser.parse_args([] if "__file__" not in globals() else None)
 
 if args.mode == "train":
+
     # Set random seed
     tf.keras.utils.set_random_seed(args.seed)
 
