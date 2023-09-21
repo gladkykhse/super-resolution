@@ -21,7 +21,6 @@ parser.add_argument("--ema", default=0.999, type=float, help="Exponential moving
 parser.add_argument("--batch_size", default=64, type=int, help="Size of batch of the train set")
 parser.add_argument("--epoch_batches", default=1000, type=int, help="Number of images per one epoch")
 parser.add_argument("--epochs", default=100, type=int, help="Number of epochs")
-parser.add_argument("--test_size", default=100, type=int, help="Number of the images in the test set")
 parser.add_argument("--log_folder", default="training_2x_to_128", type=str, help="Folder to save weights")
 parser.add_argument("--dataset_folder", default="/projects/SkyGAN/clouds_fisheye/processed", type=str,
                     help="Folder with training data")
@@ -99,14 +98,14 @@ else:
     )
     # Generate the results
     results = ddim.generate(noise, stacked_image_tensors, 1000)
+    results = tf.cast(results, tf.uint8)
 
     # Create directory if not exists
     os.makedirs(args.dst_folder, exist_ok=True)
 
     # Save generated images to a folder
     for i, image_tensor in enumerate(results):
-        image_tensor = tf.image.convert_image_dtype(image_tensor, dtype=tf.uint8, saturate=True)
-        encoded_image = tf.image.encode_png(image_tensor)
+        encoded_image = tf.image.encode_jpeg(image_tensor)
         filename = os.path.join(args.dst_folder, f'{i}.png')
         with tf.io.gfile.GFile(filename, 'wb') as f:
             f.write(encoded_image.numpy())
