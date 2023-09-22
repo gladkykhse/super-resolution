@@ -10,8 +10,8 @@ parser.add_argument("--mode", default=None, type=str, choices=["train", "upscale
                     help="Mode of using the model")
 # Arguments for training
 parser.add_argument("--seed", default=42, type=int, help="Random seed")
-parser.add_argument("--height", default=128, type=int, help="Up-scaled image height")
-parser.add_argument("--width", default=128, type=int, help="Up-scaled image width")
+parser.add_argument("--height", default=256, type=int, help="Up-scaled image height")
+parser.add_argument("--width", default=256, type=int, help="Up-scaled image width")
 parser.add_argument("--channels", default=3, type=int, help="Up-scaled image channels")
 parser.add_argument("--cnn_channels", default=32, type=int, help="CNN channels in the first stage")
 parser.add_argument("--downscale", default=2, type=int, help="Downscale factor")
@@ -21,17 +21,17 @@ parser.add_argument("--ema", default=0.999, type=float, help="Exponential moving
 parser.add_argument("--batch_size", default=64, type=int, help="Size of batch of the train set")
 parser.add_argument("--epoch_batches", default=1000, type=int, help="Number of images per one epoch")
 parser.add_argument("--epochs", default=100, type=int, help="Number of epochs")
-parser.add_argument("--log_folder", default="training_2x_to_128", type=str, help="Folder to save weights")
+parser.add_argument("--log_folder", default="training_2x_to_256", type=str, help="Folder to save weights")
 parser.add_argument("--dataset_folder", default="/projects/SkyGAN/clouds_fisheye/processed", type=str,
                     help="Folder with training data")
 
 # Arguments for upscaling
-parser.add_argument("--src_folder", default="low_res_64", type=str, help="Folder with images to upscale")
-parser.add_argument("--dst_folder", default="sr_images_128", type=str, help="Folder to save results")
-parser.add_argument("--upscale", default=2, type=int, choices=[4, 8], help="Upscale factor")
-parser.add_argument("--weights_path", default="/home/s_gladkykh/super-resolution/training_2x_to_128/cp.ckpt", type=str,
+parser.add_argument("--src_folder", default="images128", type=str, help="Folder with images to upscale")
+parser.add_argument("--dst_folder", default="sr_images128", type=str, help="Folder to save results")
+parser.add_argument("--upscale", default=2, type=int, choices=[2, 4, 8], help="Upscale factor")
+parser.add_argument("--weights_path", default="/home/s_gladkykh/super-resolution/training_2x_to_256/cp.ckpt", type=str,
                     help="Upscale factor")
-parser.add_argument("--resolution", default=(64, 64), type=tuple, choices=[(64, 64)],
+parser.add_argument("--resolution", default=(128, 128), type=tuple,
                     help="Starting resolution of the images to upscale")
 
 args = parser.parse_args([] if "__file__" not in globals() else None)
